@@ -1,0 +1,296 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>C++中的内存分区模型 | Hexo</title><meta name="author" content="daziwei"><meta name="copyright" content="daziwei"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="这篇文章用于自己的学习记录，如有记录不清的地方多担待。 内存分区模型C++在程序运行时，将内存划分为了 4个区域 他们分别是：  代码区：存放函数体的二进制代码，由OS经行管理 存放cpu执行的机器指令 代码区共享的 只读   全局区：存放全局变量和静态变量以及常量（const) 栈区：由编译器自动分配释放，存放函数的参数值，局部变量等 函数的形参 声明在函数中的局部变量 用register声明">
+<meta property="og:type" content="article">
+<meta property="og:title" content="C++中的内存分区模型">
+<meta property="og:url" content="http://example.com/2024/05/06/C++%E4%B8%AD%E7%9A%84%E5%86%85%E5%AD%98%E5%88%86%E5%8C%BA%E6%A8%A1%E5%9E%8B/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="这篇文章用于自己的学习记录，如有记录不清的地方多担待。 内存分区模型C++在程序运行时，将内存划分为了 4个区域 他们分别是：  代码区：存放函数体的二进制代码，由OS经行管理 存放cpu执行的机器指令 代码区共享的 只读   全局区：存放全局变量和静态变量以及常量（const) 栈区：由编译器自动分配释放，存放函数的参数值，局部变量等 函数的形参 声明在函数中的局部变量 用register声明">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://i.loli.net/2021/02/24/5O1day2nriDzjSu.png">
+<meta property="article:published_time" content="2024-05-06T08:55:24.000Z">
+<meta property="article:modified_time" content="2024-05-08T02:54:07.486Z">
+<meta property="article:author" content="daziwei">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://i.loli.net/2021/02/24/5O1day2nriDzjSu.png"><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="http://example.com/2024/05/06/C++%E4%B8%AD%E7%9A%84%E5%86%85%E5%AD%98%E5%88%86%E5%8C%BA%E6%A8%A1%E5%9E%8B/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=4.13.0"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.33/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.11.1/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'C++中的内存分区模型',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2024-05-08 10:54:07'
+}</script><script>(win=>{
+      win.saveToLocal = {
+        set: (key, value, ttl) => {
+          if (ttl === 0) return
+          const now = Date.now()
+          const expiry = now + ttl * 86400000
+          const item = {
+            value,
+            expiry
+          }
+          localStorage.setItem(key, JSON.stringify(item))
+        },
+      
+        get: key => {
+          const itemStr = localStorage.getItem(key)
+      
+          if (!itemStr) {
+            return undefined
+          }
+          const item = JSON.parse(itemStr)
+          const now = Date.now()
+      
+          if (now > item.expiry) {
+            localStorage.removeItem(key)
+            return undefined
+          }
+          return item.value
+        }
+      }
+    
+      win.getScript = (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        script.onerror = reject
+        script.onload = script.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          script.onload = script.onreadystatechange = null
+          resolve()
+        }
+
+        Object.keys(attr).forEach(key => {
+          script.setAttribute(key, attr[key])
+        })
+
+        document.head.appendChild(script)
+      })
+    
+      win.getCSS = (url, id = false) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onerror = reject
+        link.onload = link.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          link.onload = link.onreadystatechange = null
+          resolve()
+        }
+        document.head.appendChild(link)
+      })
+    
+      win.activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+        if (t === 'dark') activateDarkMode()
+        else if (t === 'light') activateLightMode()
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+      const detectApple = () => {
+        if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+          document.documentElement.classList.add('apple')
+        }
+      }
+      detectApple()
+    })(window)</script><meta name="generator" content="Hexo 7.2.0"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="https://i.loli.net/2021/02/24/5O1day2nriDzjSu.png" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">2</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">0</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">0</div></a></div><hr class="custom-hr"/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page group" href="javascript:void(0);"><i class="fa-fw fa fa-heartbeat"></i><span> 清单</span><i class="fas fa-chevron-down"></i></a><ul class="menus_item_child"><li><a class="site-page child" href="/music/"><i class="fa-fw fas fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/Gallery/"><i class="fa-fw fas fa-images"></i><span> 照片</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 电影</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header"><nav id="nav"><span id="blog-info"><a href="/" title="Hexo"><span class="site-name">Hexo</span></a></span><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page group" href="javascript:void(0);"><i class="fa-fw fa fa-heartbeat"></i><span> 清单</span><i class="fas fa-chevron-down"></i></a><ul class="menus_item_child"><li><a class="site-page child" href="/music/"><i class="fa-fw fas fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/Gallery/"><i class="fa-fw fas fa-images"></i><span> 照片</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 电影</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><a class="site-page" href="javascript:void(0);"><i class="fas fa-bars fa-fw"></i></a></div></div></nav><div id="post-info"><h1 class="post-title">C++中的内存分区模型</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2024-05-06T08:55:24.000Z" title="发表于 2024-05-06 16:55:24">2024-05-06</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2024-05-08T02:54:07.486Z" title="更新于 2024-05-08 10:54:07">2024-05-08</time></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="C++中的内存分区模型"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="post-content" id="article-container"><p> 这篇文章用于自己的学习记录，如有记录不清的地方多担待。</p>
+<h2 id="内存分区模型"><a href="#内存分区模型" class="headerlink" title="内存分区模型"></a>内存分区模型</h2><p>C++在程序运行时，将内存划分为了 <strong>4个区域</strong></p>
+<p>他们分别是：</p>
+<ul>
+<li>代码区：存放函数体的二进制代码，由OS经行管理<ul>
+<li>存放cpu执行的机器指令</li>
+<li>代码区共享的</li>
+<li>只读</li>
+</ul>
+</li>
+<li>全局区：存放<strong>全局变量</strong>和<strong>静态变量</strong>以及<strong>常量（const)</strong></li>
+<li>栈区：由编译器自动分配释放，存放函数的参数值，局部变量等<ul>
+<li>函数的形参</li>
+<li>声明在函数中的局部变量</li>
+<li>用register声明的局部变量或函数形参。</li>
+</ul>
+</li>
+<li>堆区：由程序员分配和释放，若程序员不释放，释放时由OS回收</li>
+</ul>
+<p><strong>内存分区的意义：</strong></p>
+<p>不同区域存放的数据，赋予不同的生命周期, 给我们更大的灵活编程</p>
+<h3 id="程序运行前"><a href="#程序运行前" class="headerlink" title="程序运行前"></a>程序运行前</h3><p>在程序编译后，生成了exe可执行程序，<strong>未执行该程序前</strong>分为两个区域</p>
+<p>​	<strong>代码区：</strong></p>
+<p>​		存放 CPU 执行的机器指令</p>
+<p>​		代码区是<strong>共享</strong>的，共享的目的是对于频繁被执行的程序，只需要在内存中有一份代码即可</p>
+<p>​		代码区是<strong>只读</strong>的，使其只读的原因是防止程序意外地修改了它的指令</p>
+<p>​	<strong>全局区：</strong></p>
+<p>​		全局变量和静态变量存放在此.</p>
+<p>​		全局区还包含了常量区, 字符串常量和其他常量也存放在此.</p>
+<p>​		该区域的数据在程序结束后由操作系统释放</p>
+<p><strong>以下是一段代码示例</strong></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//全局变量</span></span><br><span class="line"><span class="type">int</span> g_a = <span class="number">10</span>;</span><br><span class="line"><span class="type">int</span> g_b = <span class="number">10</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">//全局常量</span></span><br><span class="line"><span class="type">const</span> <span class="type">int</span> c_g_a = <span class="number">10</span>;</span><br><span class="line"><span class="type">const</span> <span class="type">int</span> c_g_b = <span class="number">10</span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="comment">//局部变量</span></span><br><span class="line">	<span class="type">int</span> a = <span class="number">10</span>;</span><br><span class="line">	<span class="type">int</span> b = <span class="number">10</span>;</span><br><span class="line"></span><br><span class="line">	<span class="comment">//打印地址</span></span><br><span class="line">	cout &lt;&lt; <span class="string">&quot;局部变量a地址为： &quot;</span> &lt;&lt; (<span class="type">int</span>)&amp;a &lt;&lt; endl;</span><br><span class="line">	cout &lt;&lt; <span class="string">&quot;局部变量b地址为： &quot;</span> &lt;&lt; (<span class="type">int</span>)&amp;b &lt;&lt; endl;</span><br><span class="line"></span><br><span class="line">	cout &lt;&lt; <span class="string">&quot;全局变量g_a地址为： &quot;</span> &lt;&lt;  (<span class="type">int</span>)&amp;g_a &lt;&lt; endl;</span><br><span class="line">	cout &lt;&lt; <span class="string">&quot;全局变量g_b地址为： &quot;</span> &lt;&lt;  (<span class="type">int</span>)&amp;g_b &lt;&lt; endl;</span><br><span class="line"></span><br><span class="line">	<span class="comment">//静态变量</span></span><br><span class="line">	<span class="type">static</span> <span class="type">int</span> s_a = <span class="number">10</span>;</span><br><span class="line">	<span class="type">static</span> <span class="type">int</span> s_b = <span class="number">10</span>;</span><br><span class="line"></span><br><span class="line">	cout &lt;&lt; <span class="string">&quot;静态变量s_a地址为： &quot;</span> &lt;&lt; (<span class="type">int</span>)&amp;s_a &lt;&lt; endl;</span><br><span class="line">	cout &lt;&lt; <span class="string">&quot;静态变量s_b地址为： &quot;</span> &lt;&lt; (<span class="type">int</span>)&amp;s_b &lt;&lt; endl;</span><br><span class="line"></span><br><span class="line">	cout &lt;&lt; <span class="string">&quot;字符串常量地址为： &quot;</span> &lt;&lt; (<span class="type">int</span>)&amp;<span class="string">&quot;hello world&quot;</span> &lt;&lt; endl;</span><br><span class="line">	cout &lt;&lt; <span class="string">&quot;字符串常量地址为： &quot;</span> &lt;&lt; (<span class="type">int</span>)&amp;<span class="string">&quot;hello world1&quot;</span> &lt;&lt; endl;</span><br><span class="line"></span><br><span class="line">	cout &lt;&lt; <span class="string">&quot;全局常量c_g_a地址为： &quot;</span> &lt;&lt; (<span class="type">int</span>)&amp;c_g_a &lt;&lt; endl;</span><br><span class="line">	cout &lt;&lt; <span class="string">&quot;全局常量c_g_b地址为： &quot;</span> &lt;&lt; (<span class="type">int</span>)&amp;c_g_b &lt;&lt; endl;</span><br><span class="line"></span><br><span class="line">	<span class="type">const</span> <span class="type">int</span> c_l_a = <span class="number">10</span>;</span><br><span class="line">	<span class="type">const</span> <span class="type">int</span> c_l_b = <span class="number">10</span>;</span><br><span class="line">	cout &lt;&lt; <span class="string">&quot;局部常量c_l_a地址为： &quot;</span> &lt;&lt; (<span class="type">int</span>)&amp;c_l_a &lt;&lt; endl;</span><br><span class="line">	cout &lt;&lt; <span class="string">&quot;局部常量c_l_b地址为： &quot;</span> &lt;&lt; (<span class="type">int</span>)&amp;c_l_b &lt;&lt; endl;</span><br><span class="line"></span><br><span class="line">	<span class="built_in">system</span>(<span class="string">&quot;pause&quot;</span>);</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="D:\hexo-jason-blog\source\imgs\Snipaste_2024-05-07_11-22-21.png"></p>
+<p>总结：</p>
+<ul>
+<li>C++中在程序运行前分为全局区和代码区</li>
+<li>代码区特点是共享和只读</li>
+<li>全局区中存放全局变量、静态变量、常量</li>
+<li>常量区中存放 const修饰的全局常量  和 字符串常量</li>
+</ul>
+<h3 id="程序运行后"><a href="#程序运行后" class="headerlink" title="程序运行后"></a>程序运行后</h3><p><strong>栈区：</strong></p>
+<p>​		由编译器自动分配释放, 存放函数的参数值,局部变量等</p>
+<p>​		注意事项：不要返回局部变量的地址，栈区开辟的数据由编译器自动释放</p>
+<p>不要返回局部变量地址</p>
+<p><strong>示例：</strong></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">int</span> * <span class="title">func</span><span class="params">()</span><span class="comment">//形参也在栈区</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="type">int</span> a = <span class="number">10</span>;<span class="comment">//局部变量，存在栈区，栈区在函数执行完自动释放</span></span><br><span class="line">	<span class="keyword">return</span> &amp;a;<span class="comment">//返回局部变量的地址</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="type">int</span> *p = <span class="built_in">func</span>();</span><br><span class="line"></span><br><span class="line">	cout &lt;&lt; *p &lt;&lt; endl;</span><br><span class="line">	cout &lt;&lt; *p &lt;&lt; endl;</span><br><span class="line"></span><br><span class="line">	<span class="built_in">system</span>(<span class="string">&quot;pause&quot;</span>);</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+
+
+<p>​	<strong>堆区：</strong></p>
+<p>​		由程序员分配释放,若程序员不释放,程序结束时由操作系统回收</p>
+<p>​		在C++中主要利用new在堆区开辟内存</p>
+<p><strong>示例：</strong></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">int</span>* <span class="title">func</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="type">int</span>* a = <span class="keyword">new</span> <span class="built_in">int</span>(<span class="number">10</span>);<span class="comment">//利用new可以将数据开辟在堆区</span></span><br><span class="line">	<span class="keyword">return</span> a;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="type">int</span> *p = <span class="built_in">func</span>();</span><br><span class="line"></span><br><span class="line">	cout &lt;&lt; *p &lt;&lt; endl;</span><br><span class="line">	cout &lt;&lt; *p &lt;&lt; endl;</span><br><span class="line">    </span><br><span class="line">	<span class="built_in">system</span>(<span class="string">&quot;pause&quot;</span>);</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<p><strong>总结：</strong></p>
+<p>堆区数据由程序员管理开辟和释放</p>
+<p>堆区数据利用new关键字进行开辟内存</p>
+<h3 id="new操作符"><a href="#new操作符" class="headerlink" title="new操作符"></a>new操作符</h3><p>C++中利用<strong>new</strong>操作符在堆区开辟数据</p>
+<p>​	堆区开辟的数据，由程序员手动开辟，手动释放，释放利用操作符 &#x3D;&#x3D;<strong>delete</strong>&#x3D;&#x3D;</p>
+<p>​	语法：<code> new 数据类型</code></p>
+<p>​	利用new创建的数据，会返回该数据对应的类型的指针</p>
+<p><strong>示例1： 基本语法</strong></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">int</span>* <span class="title">func</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="type">int</span>* a = <span class="keyword">new</span> <span class="built_in">int</span>(<span class="number">10</span>);</span><br><span class="line">	<span class="keyword">return</span> a;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="type">int</span> *p = <span class="built_in">func</span>();</span><br><span class="line"></span><br><span class="line">	cout &lt;&lt; *p &lt;&lt; endl;</span><br><span class="line">	cout &lt;&lt; *p &lt;&lt; endl;</span><br><span class="line"></span><br><span class="line">	<span class="comment">//利用delete释放堆区数据</span></span><br><span class="line">	<span class="keyword">delete</span> p;</span><br><span class="line"></span><br><span class="line">	<span class="comment">//cout &lt;&lt; *p &lt;&lt; endl; //报错，释放的空间不可访问</span></span><br><span class="line"></span><br><span class="line">	<span class="built_in">system</span>(<span class="string">&quot;pause&quot;</span>);</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<p><strong>示例2：开辟数组</strong></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//堆区开辟数组</span></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="type">int</span>* arr = <span class="keyword">new</span> <span class="type">int</span>[<span class="number">10</span>];</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10</span>; i++)</span><br><span class="line">	&#123;</span><br><span class="line">		arr[i] = i + <span class="number">100</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10</span>; i++)</span><br><span class="line">	&#123;</span><br><span class="line">		cout &lt;&lt; arr[i] &lt;&lt; endl;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">//释放数组 delete 后加 []</span></span><br><span class="line">	<span class="keyword">delete</span>[] arr;</span><br><span class="line"></span><br><span class="line">	<span class="built_in">system</span>(<span class="string">&quot;pause&quot;</span>);</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+
+
+
+<h2 id="引用"><a href="#引用" class="headerlink" title="引用"></a>引用</h2><h3 id="引用的基本使用"><a href="#引用的基本使用" class="headerlink" title="引用的基本使用"></a>引用的基本使用</h3><p>**作用： **给变量起别名</p>
+<p><strong>语法：</strong> <code>数据类型 &amp;别名 = 原名</code></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"> </span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> std;</span><br><span class="line"> </span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span> <span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">   <span class="comment">// 声明简单的变量</span></span><br><span class="line">   <span class="type">int</span>    i;</span><br><span class="line">   <span class="type">double</span> d;</span><br><span class="line"> </span><br><span class="line">   <span class="comment">// 声明引用变量</span></span><br><span class="line">   <span class="type">int</span>&amp;    r = i;</span><br><span class="line">   <span class="type">double</span>&amp; s = d;</span><br><span class="line">   </span><br><span class="line">   i = <span class="number">5</span>;</span><br><span class="line">   cout &lt;&lt; <span class="string">&quot;Value of i : &quot;</span> &lt;&lt; i &lt;&lt; endl;</span><br><span class="line">   cout &lt;&lt; <span class="string">&quot;Value of i reference : &quot;</span> &lt;&lt; r  &lt;&lt; endl;</span><br><span class="line"> </span><br><span class="line">   d = <span class="number">11.7</span>;</span><br><span class="line">   cout &lt;&lt; <span class="string">&quot;Value of d : &quot;</span> &lt;&lt; d &lt;&lt; endl;</span><br><span class="line">   cout &lt;&lt; <span class="string">&quot;Value of d reference : &quot;</span> &lt;&lt; s  &lt;&lt; endl;</span><br><span class="line">   </span><br><span class="line">   <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="引用注意事项"><a href="#引用注意事项" class="headerlink" title="引用注意事项"></a>引用注意事项</h3><ul>
+<li>引用必须初始化</li>
+<li>引用在初始化后，不可以改变</li>
+</ul>
+<p>示例：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="type">int</span> a = <span class="number">10</span>;</span><br><span class="line">	<span class="type">int</span> b = <span class="number">20</span>;</span><br><span class="line">	<span class="comment">//int &amp;c; //错误，引用必须初始化</span></span><br><span class="line">	<span class="type">int</span> &amp;c = a; <span class="comment">//一旦初始化后，就不可以更改</span></span><br><span class="line">	c = b; <span class="comment">//这是赋值操作，不是更改引用</span></span><br><span class="line"></span><br><span class="line">	cout &lt;&lt; <span class="string">&quot;a = &quot;</span> &lt;&lt; a &lt;&lt; endl;</span><br><span class="line">	cout &lt;&lt; <span class="string">&quot;b = &quot;</span> &lt;&lt; b &lt;&lt; endl;</span><br><span class="line">	cout &lt;&lt; <span class="string">&quot;c = &quot;</span> &lt;&lt; c &lt;&lt; endl;</span><br><span class="line"></span><br><span class="line">	<span class="built_in">system</span>(<span class="string">&quot;pause&quot;</span>);</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="引用做函数参数"><a href="#引用做函数参数" class="headerlink" title="引用做函数参数"></a>引用做函数参数</h3><p><strong>作用：</strong>函数传参时，可以利用引用的技术让形参修饰实参</p>
+<p><strong>优点：</strong>可以简化指针修改实参</p>
+<ul>
+<li>值传递</li>
+</ul>
+<p>形参是实参的拷贝，改变形参的值并不会影响外部实参的值。从被调用函数的角度来说，值传递是单向的（实参-&gt;形参），参数的值只能传入，不能传出。</p>
+<p><strong>当函数内部需要修改参数，并且不希望这个改变影响调用者时，采用值传递。</strong></p>
+<ul>
+<li>指针传递</li>
+</ul>
+<p>形参为指向实参地址的指针，当对形参的指向操作时，就相当于对实参本身进行的操作</p>
+<ul>
+<li>引用传递</li>
+</ul>
+<p>形参相当于是实参的“别名”，对形参的操作其实就是对实参的操作</p>
+<p>相当于通过间接寻址访问实参变量</p>
+<p><strong>示例：</strong></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//1. 值传递</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">mySwap01</span><span class="params">(<span class="type">int</span> a, <span class="type">int</span> b)</span> </span>&#123;</span><br><span class="line">	<span class="type">int</span> temp = a;</span><br><span class="line">	a = b;</span><br><span class="line">	b = temp;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//2. 地址传递</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">mySwap02</span><span class="params">(<span class="type">int</span>* a, <span class="type">int</span>* b)</span> </span>&#123;</span><br><span class="line">	<span class="type">int</span> temp = *a;</span><br><span class="line">	*a = *b;</span><br><span class="line">	*b = temp;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//3. 引用传递</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">mySwap03</span><span class="params">(<span class="type">int</span>&amp; a, <span class="type">int</span>&amp; b)</span> </span>&#123;</span><br><span class="line">	<span class="type">int</span> temp = a;</span><br><span class="line">	a = b;</span><br><span class="line">	b = temp;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="type">int</span> a = <span class="number">10</span>;</span><br><span class="line">	<span class="type">int</span> b = <span class="number">20</span>;</span><br><span class="line"></span><br><span class="line">	<span class="built_in">mySwap01</span>(a, b);</span><br><span class="line">	cout &lt;&lt; <span class="string">&quot;a:&quot;</span> &lt;&lt; a &lt;&lt; <span class="string">&quot; b:&quot;</span> &lt;&lt; b &lt;&lt; endl;</span><br><span class="line"></span><br><span class="line">	<span class="built_in">mySwap02</span>(&amp;a, &amp;b);</span><br><span class="line">	cout &lt;&lt; <span class="string">&quot;a:&quot;</span> &lt;&lt; a &lt;&lt; <span class="string">&quot; b:&quot;</span> &lt;&lt; b &lt;&lt; endl;</span><br><span class="line"></span><br><span class="line">	<span class="built_in">mySwap03</span>(a, b);</span><br><span class="line">	cout &lt;&lt; <span class="string">&quot;a:&quot;</span> &lt;&lt; a &lt;&lt; <span class="string">&quot; b:&quot;</span> &lt;&lt; b &lt;&lt; endl;</span><br><span class="line"></span><br><span class="line">	<span class="built_in">system</span>(<span class="string">&quot;pause&quot;</span>);</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+
+<blockquote>
+<p>总结：通过引用参数产生的效果同按地址传递是一样的。引用的语法更清楚简单</p>
+</blockquote>
+<h3 id="引用做函数返回值"><a href="#引用做函数返回值" class="headerlink" title="引用做函数返回值"></a>引用做函数返回值</h3><p>作用：引用是可以作为函数的返回值存在的</p>
+<p>注意：<strong>不要返回局部变量引用</strong></p>
+<p>用法：函数调用作为左值</p>
+<p><strong>示例：</strong></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//返回局部变量引用</span></span><br><span class="line"><span class="function"><span class="type">int</span>&amp; <span class="title">test01</span><span class="params">()</span> </span>&#123;</span><br><span class="line">	<span class="type">int</span> a = <span class="number">10</span>; <span class="comment">//局部变量</span></span><br><span class="line">	<span class="keyword">return</span> a;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//返回静态变量引用</span></span><br><span class="line"><span class="function"><span class="type">int</span>&amp; <span class="title">test02</span><span class="params">()</span> </span>&#123;</span><br><span class="line">	<span class="type">static</span> <span class="type">int</span> a = <span class="number">20</span>;<span class="comment">//全局区，静态变量</span></span><br><span class="line">	<span class="keyword">return</span> a;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="comment">//不能返回局部变量的引用</span></span><br><span class="line">	<span class="type">int</span>&amp; ref = <span class="built_in">test01</span>();</span><br><span class="line">	cout &lt;&lt; <span class="string">&quot;ref = &quot;</span> &lt;&lt; ref &lt;&lt; endl;<span class="comment">//结果正确</span></span><br><span class="line">	cout &lt;&lt; <span class="string">&quot;ref = &quot;</span> &lt;&lt; ref &lt;&lt; endl;<span class="comment">//结果错误，局部变量，内存已经释放</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">//如果函数做左值，那么必须返回引用</span></span><br><span class="line">	<span class="type">int</span>&amp; ref2 = <span class="built_in">test02</span>();</span><br><span class="line">	cout &lt;&lt; <span class="string">&quot;ref2 = &quot;</span> &lt;&lt; ref2 &lt;&lt; endl;</span><br><span class="line">	cout &lt;&lt; <span class="string">&quot;ref2 = &quot;</span> &lt;&lt; ref2 &lt;&lt; endl;</span><br><span class="line"></span><br><span class="line">	<span class="built_in">test02</span>() = <span class="number">1000</span>;</span><br><span class="line"></span><br><span class="line">	cout &lt;&lt; <span class="string">&quot;ref2 = &quot;</span> &lt;&lt; ref2 &lt;&lt; endl;</span><br><span class="line">	cout &lt;&lt; <span class="string">&quot;ref2 = &quot;</span> &lt;&lt; ref2 &lt;&lt; endl;</span><br><span class="line"></span><br><span class="line">	<span class="built_in">system</span>(<span class="string">&quot;pause&quot;</span>);</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="引用的本质"><a href="#引用的本质" class="headerlink" title="引用的本质"></a>引用的本质</h3><p>本质：<strong>引用的本质在c++内部实现是一个指针常量.</strong></p>
+<p>讲解示例：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//发现是引用，转换为 int* const ref = &amp;a;</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">func</span><span class="params">(<span class="type">int</span>&amp; ref)</span></span>&#123;</span><br><span class="line">	ref = <span class="number">100</span>; <span class="comment">// ref是引用，转换为*ref = 100</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span></span>&#123;</span><br><span class="line">	<span class="type">int</span> a = <span class="number">10</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">//自动转换为 int* const ref = &amp;a; 指针常量是指针指向不可改，也说明为什么引用不可更改</span></span><br><span class="line">	<span class="type">int</span>&amp; ref = a; </span><br><span class="line">	ref = <span class="number">20</span>; <span class="comment">//内部发现ref是引用，自动帮我们转换为: *ref = 20;</span></span><br><span class="line">    </span><br><span class="line">	cout &lt;&lt; <span class="string">&quot;a:&quot;</span> &lt;&lt; a &lt;&lt; endl;</span><br><span class="line">	cout &lt;&lt; <span class="string">&quot;ref:&quot;</span> &lt;&lt; ref &lt;&lt; endl;</span><br><span class="line">    </span><br><span class="line">	<span class="built_in">func</span>(a);</span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>结论：C++推荐用引用技术，因为语法方便，引用本质是指针常量，但是所有的指针操作编译器都帮我们做了</p>
+<h3 id="常量引用"><a href="#常量引用" class="headerlink" title="常量引用"></a>常量引用</h3><p><strong>作用：</strong>常量引用主要用来修饰形参，防止误操作</p>
+<p>在函数形参列表中，可以加&#x2F;<em>const</em>&#x2F;<strong>修饰形参</strong>，防止形参改变实参</p>
+<p><strong>示例：</strong></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//引用使用的场景，通常用来修饰形参</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">showValue</span><span class="params">(<span class="type">const</span> <span class="type">int</span>&amp; v)</span> </span>&#123;</span><br><span class="line">	<span class="comment">//v += 10;</span></span><br><span class="line">	cout &lt;&lt; v &lt;&lt; endl;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="comment">//int&amp; ref = 10;  引用本身需要一个合法的内存空间，因此这行错误</span></span><br><span class="line">	<span class="comment">//加入const就可以了，编译器优化代码，int temp = 10; const int&amp; ref = temp;</span></span><br><span class="line">	<span class="type">const</span> <span class="type">int</span>&amp; ref = <span class="number">10</span>;</span><br><span class="line"></span><br><span class="line">	<span class="comment">//ref = 100;  //加入const后不可以修改变量</span></span><br><span class="line">	cout &lt;&lt; ref &lt;&lt; endl;</span><br><span class="line"></span><br><span class="line">	<span class="comment">//函数中利用常量引用防止误操作修改实参</span></span><br><span class="line">	<span class="type">int</span> a = <span class="number">10</span>;</span><br><span class="line">	<span class="built_in">showValue</span>(a);</span><br><span class="line"></span><br><span class="line">	<span class="built_in">system</span>(<span class="string">&quot;pause&quot;</span>);</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+
+
+<p>​	</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="http://example.com">daziwei</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="http://example.com/2024/05/06/C++%E4%B8%AD%E7%9A%84%E5%86%85%E5%AD%98%E5%88%86%E5%8C%BA%E6%A8%A1%E5%9E%8B/">http://example.com/2024/05/06/C++%E4%B8%AD%E7%9A%84%E5%86%85%E5%AD%98%E5%88%86%E5%8C%BA%E6%A8%A1%E5%9E%8B/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="http://example.com" target="_blank">Hexo</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"></div><div class="post_share"><div class="social-share" data-image="https://i.loli.net/2021/02/24/5O1day2nriDzjSu.png" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="next-post pull-full"><a href="/2024/04/29/hello-world/" title="Hello World"><div class="cover" style="background: var(--default-bg-color)"></div><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">Hello World</div></div></a></div></nav></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="https://i.loli.net/2021/02/24/5O1day2nriDzjSu.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">daziwei</div><div class="author-info__description"></div></div><div class="card-info-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">2</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">0</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">0</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/xxxxxx"><i class="fab fa-github"></i><span>Follow Me</span></a></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">This is my Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%86%85%E5%AD%98%E5%88%86%E5%8C%BA%E6%A8%A1%E5%9E%8B"><span class="toc-number">1.</span> <span class="toc-text">内存分区模型</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%A8%8B%E5%BA%8F%E8%BF%90%E8%A1%8C%E5%89%8D"><span class="toc-number">1.1.</span> <span class="toc-text">程序运行前</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%A8%8B%E5%BA%8F%E8%BF%90%E8%A1%8C%E5%90%8E"><span class="toc-number">1.2.</span> <span class="toc-text">程序运行后</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#new%E6%93%8D%E4%BD%9C%E7%AC%A6"><span class="toc-number">1.3.</span> <span class="toc-text">new操作符</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BC%95%E7%94%A8"><span class="toc-number">2.</span> <span class="toc-text">引用</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BC%95%E7%94%A8%E7%9A%84%E5%9F%BA%E6%9C%AC%E4%BD%BF%E7%94%A8"><span class="toc-number">2.1.</span> <span class="toc-text">引用的基本使用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BC%95%E7%94%A8%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A1%B9"><span class="toc-number">2.2.</span> <span class="toc-text">引用注意事项</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BC%95%E7%94%A8%E5%81%9A%E5%87%BD%E6%95%B0%E5%8F%82%E6%95%B0"><span class="toc-number">2.3.</span> <span class="toc-text">引用做函数参数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BC%95%E7%94%A8%E5%81%9A%E5%87%BD%E6%95%B0%E8%BF%94%E5%9B%9E%E5%80%BC"><span class="toc-number">2.4.</span> <span class="toc-text">引用做函数返回值</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BC%95%E7%94%A8%E7%9A%84%E6%9C%AC%E8%B4%A8"><span class="toc-number">2.5.</span> <span class="toc-text">引用的本质</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B8%B8%E9%87%8F%E5%BC%95%E7%94%A8"><span class="toc-number">2.6.</span> <span class="toc-text">常量引用</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/05/06/C++%E4%B8%AD%E7%9A%84%E5%86%85%E5%AD%98%E5%88%86%E5%8C%BA%E6%A8%A1%E5%9E%8B/" title="C++中的内存分区模型">C++中的内存分区模型</a><time datetime="2024-05-06T08:55:24.000Z" title="发表于 2024-05-06 16:55:24">2024-05-06</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/04/29/hello-world/" title="Hello World">Hello World</a><time datetime="2024-04-29T08:14:44.590Z" title="发表于 2024-04-29 16:14:44">2024-04-29</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2020 - 2024 By daziwei</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=4.13.0"></script><script src="/js/main.js?v=4.13.0"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.33/dist/fancybox/fancybox.umd.min.js"></script><div class="js-pjax"></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
